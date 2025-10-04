@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MODULO PNEUMATICI</title>
+<style>
+  body { font-family: Roboto, Arial; margin:0; padding:0; display:flex; justify-content:center; background:#e6f0fa; font-size:16px; }
+  #formWrapper { width:100%; max-width:480px; padding:10px 20px; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); margin:20px 0; }
+  h2{text-align:center; font-size:22px; margin-bottom:10px;} 
+  h4{text-align:center; font-size:16px; color:#555; margin:5px 0; font-weight:normal;}
+  label{display:block; font-weight:bold; margin-top:18px; font-size:16px;text-align: center;}
+  input,select,textarea{width:100%; padding:16px 14px; margin-top:5px; font-size:20px; line-height:1.4; border-radius:8px; border:1px solid #ccc; box-sizing:border-box;display: block;text-align: center;}
+  .radio-group{display:flex; gap:12px; flex-wrap:wrap; margin-top:5px;justify-content: center}
+  .radio-group label{display:flex; align-items:center; cursor:pointer; font-weight:normal; font-size:17px;}
+  .radio-group input{width:auto; margin-right:8px; accent-color:#1a73e8;text-align: center; transform:scale(1.3);}
+  button{background-color:#1a73e8; color:white; border:none; cursor:pointer; margin-top:15px; font-size:20px; padding:18px; border-radius:8px; width:100%;}
+  button:disabled{background-color:#ccc; cursor:not-allowed;}
+  #targaMsg,#alertObbligatorio{font-weight:bold; margin-top:5px; color:red; font-size:16px;text-align: center}
+  #successOverlay{display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,0.95); z-index:100; text-align:center; padding:50px 20px; font-size:22px; font-weight:bold; color:green; max-width:90%; max-height:80%; overflow-y:auto; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.2);}
+  #loadingScreen{position:fixed; top:0; left:0; width:100%; height:100%; background:#e6f0fa; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:200;}
+  #loadingScreen h3{color:#1a73e8; font-size:26px; margin-bottom:20px;}
+  .spinner{border:5px solid #f3f3f3; border-top:5px solid #1a73e8; border-radius:50%; width:60px; height:60px; animation:spin 1s linear infinite;}
+  @keyframes spin{0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);}}
+  
+  /* Ottimizzazioni mobile */
+  @media (max-width: 600px) {
+    h2{font-size:24px;}
+    h4{font-size:17px;}
+    label{font-size:17px;}
+    input,select,textarea{font-size:22px; padding:18px 16px;}
+    .radio-group label{font-size:18px;}
+    .radio-group input{transform:scale(1.5);}
+    button{font-size:22px; padding:20px;}
+    #targaMsg,#alertObbligatorio{font-size:17px;}
+    #loadingScreen h3{font-size:28px;}
+  }
+</style>
+</head>
+<body onload="init()">
+  <!-- Schermata di caricamento -->
+  <div id="loadingScreen">
+    <h3>Caricamento in corso...</h3>
+    <div class="spinner"></div>
+  </div>
+
+  <div id="formWrapper" style="display:none;">
+    <h2>PRENOTAZIONE CAMBIO GOMME STAGIONALI FLOTTE AUTONOLEGGIO</h2>
+    <h4>PALAMINI AUTO, Via San Luigi 1/A, Cesano Maderno</h4>
+    <h4>Si ricorda di rispettare l'orario scelto, grazie.</h4>
+
+    <form id="prenotaForm" oninput="aggiornaStatoPrenota(); return false;">
+      <label>EMAIL:</label>
+      <input type="email" id="email" inputmode="email" autocomplete="email" onchange="aggiornaStatoPrenota()">
+
+      <label>NOME FLOTTA AUTONOLEGGIO:</label>
+      <input type="text" id="nomeFlotta" onchange="aggiornaStatoPrenota()">
+
+      <label>TARGA AUTO:</label>
+      <input type="text" id="targa" maxlength="7" oninput="checkTargaInput()">
+      <div id="targaMsg">✏️ Inserisci la targa e attendi la validazione</div>
+
+      <label>MARCA E MODELLO AUTO:</label>
+      <input type="text" id="marcaModello" readonly>
+      <div style="font-size:14px; color:#555; margin-top:2px;text-align:center">Si compila automaticamente dopo aver inserito la targa</div>
+
+      <label>KM AUTO:</label>
+      <input type="text" id="kmauto" onchange="aggiornaStatoPrenota()">
+
+      <label>NOME E COGNOME DRIVER:</label>
+      <input type="text" id="nomeCognome" onchange="aggiornaStatoPrenota()">
+
+      <label>CONTATTO TELEFONICO:</label>
+      <input type="text" id="telefono" inputmode="tel" autocomplete="tel" onchange="aggiornaStatoPrenota()">
+
+      <label>TIPO DI APPUNTAMENTO:</label>
+      <div class="radio-group">
+        <label><input type="radio" name="tipoAppuntamento" value="1 ORA DI FERMO AUTO" onchange="aggiornaDateDisponibili()">1 ORA DI FERMO AUTO</label>
+        <label><input type="radio" name="tipoAppuntamento" value="3 ORE DI FERMO AUTO" onchange="aggiornaDateDisponibili()">3 ORE DI FERMO AUTO</label>
+      </div>
+
+      <label>DATA APPUNTAMENTO:</label>
+      <select id="dataAppuntamento" onchange="aggiornaStatoPrenota()">
+        <option value="">Seleziona...</option>
+      </select>
+
+      <div id="alertObbligatorio">❌ Attenzione: tutti i campi sono obbligatori</div>
+      <button type="button" id="prenota" onclick="invia()" disabled>Prenota</button>
+    </form>
+  </div>
+
+  <div id="successOverlay">APPUNTAMENTO CONFERMATO! Riceverete una copia all'indirizzo email indicato!</div>
+
+<script>
+// ⚠️ IMPORTANTE: Sostituisci questo URL con quello del tuo deployment Apps Script
+const API_URL = 'https://script.google.com/macros/s/AKfycbyurWDN6Bj6a24RQYc2XERmE-iHfobRuXQbqlBuJE7g5hJtDiwlrxDpJGVTAChb90k3/exec';
+
+let dbTarghe = {}, date1ora = [], date3ore = [], targaValida = false, targaQuantita = 0;
+
+async function init(){
+  const loadingScreen = document.getElementById("loadingScreen");
+  const formWrapper = document.getElementById("formWrapper");
+  
+  // Imposta subito il timeout di 2 secondi
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+    formWrapper.style.display = "block";
+  }, 2000);
+  
+  // Nel frattempo carica dati in background
+  try {
+    const response = await fetch(API_URL + '?action=getAllData');
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    dbTarghe = data.database || {};
+    date1ora = data.date && data.date["1h"] ? data.date["1h"] : [];
+    date3ore = data.date && data.date["3h"] ? data.date["3h"] : [];
+    
+    console.log('Dati caricati:', Object.keys(dbTarghe).length, 'targhe');
+    console.log('Date 1h:', date1ora.length, 'Date 3h:', date3ore.length);
+    
+  } catch(error) {
+    console.error('Errore caricamento dati:', error);
+    alert('Errore nel caricamento dei dati. Riprova più tardi.');
+    return;
+  }
+
+  aggiornaStatoPrenota();
+}
+
+function checkTargaInput(){
+  const t = document.getElementById("targa").value.toUpperCase().trim();
+  const msg = document.getElementById("targaMsg");
+  const marcaInput = document.getElementById("marcaModello");
+  
+  if(t.length === 7){
+    if(dbTarghe[t]){
+      targaQuantita = dbTarghe[t].quantita;
+      marcaInput.value = dbTarghe[t].modello;
+      if(targaQuantita >= 4){
+        msg.innerHTML = "✅ Targa valida. Ci sono " + targaQuantita + " pneumatici in deposito";
+        targaValida = true;
+      } else {
+        msg.innerHTML = "⚠️ Targa valida. Ci sono solo " + targaQuantita + " pneumatici in deposito. È necessario passare in officina per prendere appuntamento.";
+        targaValida = false;
+      }
+    } else {
+      marcaInput.value = "";
+      msg.innerHTML = "❌ Targa non trovata in deposito. È necessario passare in officina per prendere appuntamento.";
+      targaValida = false;
+    }
+  } else {
+    marcaInput.value = "";
+    msg.innerHTML = "✏️ Inserisci la targa (7 caratteri)";
+    targaValida = false;
+  }
+  aggiornaStatoPrenota();
+}
+
+function aggiornaDateDisponibili(){
+  const tipo = document.querySelector('input[name="tipoAppuntamento"]:checked')?.value;
+  const select = document.getElementById("dataAppuntamento");
+  select.innerHTML = '<option value="">Seleziona...</option>';
+  let lista = tipo === "1 ORA DI FERMO AUTO" ? date1ora : tipo === "3 ORE DI FERMO AUTO" ? date3ore : [];
+  lista.forEach(d => {
+    const option = document.createElement("option");
+    option.value = d;
+    option.textContent = d;
+    select.appendChild(option);
+  });
+  aggiornaStatoPrenota();
+}
+
+function aggiornaStatoPrenota(){
+  const btn = document.getElementById("prenota");
+  const tuttiCampi = ["email","nomeFlotta","targa","marcaModello","kmauto","nomeCognome","telefono"]
+    .every(id => document.getElementById(id).value.trim() !== "") &&
+    targaValida &&
+    document.querySelector('input[name="tipoAppuntamento"]:checked') &&
+    document.getElementById("dataAppuntamento").value !== "";
+  
+  btn.disabled = !tuttiCampi;
+  document.getElementById("alertObbligatorio").style.display = tuttiCampi ? "none" : "block";
+}
+
+async function invia(){
+  const btn = document.getElementById("prenota");
+  btn.disabled = true;
+  btn.textContent = "Invio in corso, attendere...";
+
+  const dati = {
+    email: document.getElementById("email").value.trim(),
+    nomeFlotta: document.getElementById("nomeFlotta").value.trim(),
+    targa: document.getElementById("targa").value.trim(),
+    marcaModello: document.getElementById("marcaModello").value.trim(),
+    kmauto: document.getElementById("kmauto").value.trim(),
+    nomeCognome: document.getElementById("nomeCognome").value.trim(),
+    telefono: document.getElementById("telefono").value.trim(),
+    tipoAppuntamento: document.querySelector('input[name="tipoAppuntamento"]:checked').value,
+    dataAppuntamento: document.getElementById("dataAppuntamento").value
+  };
+
+  console.log('Invio dati a:', API_URL);
+  console.log('Dati:', dati);
+
+  // Avvia chiamata in background (Apps Script lavora da solo)
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'salvaPrenotazione', dati: dati })
+  })
+  .then(response => {
+    console.log('Response status:', response.status);
+    return response.json();
+  })
+  .then(result => {
+    console.log('Risultato:', result);
+  })
+  .catch(error => {
+    console.error('Errore (non bloccante):', error);
+  });
+
+  // Mostra conferma SEMPRE dopo 2500ms (2.5 secondi)
+  setTimeout(() => {
+    document.getElementById("formWrapper").style.display="none";
+    const overlay = document.getElementById("successOverlay");
+    overlay.style.display="block";
+    overlay.scrollIntoView({behavior:"smooth", block:"center"});
+  }, 2500);
+}
+</script>
+</body>
+</html>
