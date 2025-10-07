@@ -95,7 +95,7 @@
 // ⚠️ IMPORTANTE: Sostituisci questo URL con quello del tuo deployment Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbyurWDN6Bj6a24RQYc2XERmE-iHfobRuXQbqlBuJE7g5hJtDiwlrxDpJGVTAChb90k3/exec';
 
-let dbTarghe = {}, date1ora = [], date3ore = [], targaValida = false, targaQuantita = 0;
+let dbTarghe = {}, date1ora = [], date3ore = [], targaValida = false, targaQuantita = 0; 
 
 async function init(){
   const loadingScreen = document.getElementById("loadingScreen");
@@ -136,6 +136,7 @@ function checkTargaInput(){
   const t = document.getElementById("targa").value.toUpperCase().trim();
   const msg = document.getElementById("targaMsg");
   const marcaInput = document.getElementById("marcaModello");
+  const depohtml = 0;
   
   if(t.length === 7){
     if(dbTarghe[t]){
@@ -146,7 +147,7 @@ function checkTargaInput(){
         msg.innerHTML = "✅ Targa valida. Ci sono " + targaQuantita + " pneumatici in deposito " + depohtml;
         targaValida = true;
       } else {
-        msg.innerHTML = "⚠️ Targa valida. Ci sono solo " + targaQuantita + " pneumatici in deposito. È necessario passare in officina per prendere appuntamento. " + depohtml;
+        msg.innerHTML = "⚠️ Targa valida. Ci sono solo " + targaQuantita + " pneumatici in deposito. È necessario passare in officina per prendere appuntamento " + depohtml;
         targaValida = false;
       }
     } else {
